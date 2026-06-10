@@ -1,0 +1,61 @@
+FROM registry.access.redhat.com/ubi9/ubi:latest
+
+# Metadata
+LABEL maintainer="<johnhenry.andrus@eversource.com>"
+ENV HOME="/home/eversource"
+
+# Install Git, Python 3.12, and runtime system binaries directly via DNF
+RUN echo "-- Installing Core System Dependencies" \
+&& dnf -y makecache \
+&& dnf -y update \
+&& dnf -y install --allowerasing \
+sudo \
+which \
+hostname \
+gettext \
+yum-utils \
+unzip \
+jq \
+libicu \
+wget \
+curl \
+tar \
+git \
+python3.12 \
+python3.12-pip \
+&& dnf clean all
+
+# Re-route core Python symlinks to establish system defaults safely
+RUN ln -sf /usr/bin/python3.12 /usr/local/bin/python3 \
+&& ln -sf /usr/bin/pip3.12 /usr/local/bin/pip3 \
+&& ln -sf /usr/bin/python3.12 /usr/local/bin/python \
+&& ln -sf /usr/bin/pip3.12 /usr/local/bin/pip
+
+# Upgrade core package managers using the standard public PyPI registry
+RUN /usr/local/bin/pip3 install --no-cache-dir --upgrade pip==24.0 setuptools==78.1.1 wheel==0.43.0
+
+# Install requested python application payloads via public PyPI
+RUN /usr/local/bin/pip3 install --no-cache-dir \
+pytest==8.2.2 \
+wheel==0.47.0 \
+databricks-dlt==0.3.0 \
+idna==3.7 \
+urllib3==2.2.2 \
+simplejson==3.19.*
+
+# Install the current Databricks CLI executable release
+RUN rm -f /usr/local/bin/databricks \
+&& curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+
+# Verify environment build versions prior to permissions isolation
+RUN python3 --version \
+&& python3 -m pip --version \
+&& databricks -v
+
+# Explicitly provision the 1001 user account identity map
+RUN groupadd -g 1001 eversource \
+&& useradd -u 1001 -g eversource -m -d ${HOME} -s /bin/bash eversource \
+&& chown -R 1001:1001 ${HOME}
+
+USER eversource
+WORKDIR $HOME
