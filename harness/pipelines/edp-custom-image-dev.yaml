@@ -1,0 +1,35 @@
+pipeline:
+  name: edp-custom-image-dev
+  identifier: edp_custom_image_dev
+  orgIdentifier: esenterpriseitportfolio
+  projectIdentifier: es0012enteenterprisedataplatform
+  tags: {}
+  stages:
+    - stage:
+        name: Validate custom image
+        identifier: validate_custom_image
+        type: CI
+        spec:
+          cloneCodebase: false
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Smoke test image
+                  identifier: smoke_test_image
+                  spec:
+                    connectorRef: ghcr_mrachek_edp_custom_image
+                    image: ghcr.io/mrachek/edp-custom-image:dev
+                    shell: Sh
+                    imagePullPolicy: Always
+                    command: |-
+                      set -euo pipefail
+                      python3 --version
+                      python3 -m pip --version
+                      databricks --version
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}

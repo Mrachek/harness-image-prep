@@ -12,6 +12,11 @@ Current Dockerfile path:
 
 - `images/image1/DockerFile`
 
+Harness pipeline:
+
+- `harness/pipelines/edp-custom-image-dev.yaml`
+- `harness/pipelines/container-image-validation.yaml`
+
 ## Build
 
 ```powershell

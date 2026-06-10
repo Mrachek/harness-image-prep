@@ -1,0 +1,54 @@
+pipeline:
+  name: container-image-validation
+  identifier: container_image_validation
+  orgIdentifier: esenterpriseitportfolio
+  projectIdentifier: es0012enteenterprisedataplatform
+  tags: {}
+  stages:
+    - stage:
+        name: Validate container image
+        identifier: validate_container_image
+        type: CI
+        spec:
+          cloneCodebase: false
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Validate toolchain
+                  identifier: validate_toolchain
+                  spec:
+                    connectorRef: ghcr_mrachek_edp_custom_image
+                    image: ghcr.io/mrachek/edp-custom-image:dev
+                    shell: Sh
+                    imagePullPolicy: Always
+                    command: |-
+                      set -euo pipefail
+
+                      echo "Checking core executables"
+                      for bin in python3 pip3 databricks; do
+                        if ! command -v "$bin" >/dev/null 2>&1; then
+                          echo "Missing executable: $bin" >&2
+                          exit 1
+                        fi
+                      done
+
+                      echo "Checking Python runtime"
+                      python3 --version
+                      python3 -m pip --version
+
+                      echo "Checking installed package versions"
+                      python3 -c 'import importlib.metadata as metadata, platform; checks=["setuptools","wheel","idna","urllib3","simplejson","pytest","databricks-dlt"]; print(f"python={platform.python_version()}"); [print(f"{package}={metadata.version(package)}") for package in checks]'
+
+                      echo "Checking Databricks CLI"
+                      databricks --version
+
+                      echo "Verifying import/runtime availability"
+                      python3 -c 'import setuptools, wheel; print(f"setuptools_import={setuptools.__version__}"); print(f"wheel_import={wheel.__version__}")'
+
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Cloud
+            spec: {}
